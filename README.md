@@ -104,7 +104,7 @@ Replace that `CANISTER_ID` argument with the output from step 3.
 You can also verify if your cycles wallet is working:
 
 ```
-dfx wallet --network balance
+dfx wallet --network=ic balance
 ```
 
 It should print the remaining cycles in your wallet.
