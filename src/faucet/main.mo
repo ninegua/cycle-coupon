@@ -68,6 +68,11 @@ shared (installation) actor class Faucet() = self {
       Queue.toArray(all_wallets)
     };
 
+    public shared (args) func wallet_receive() {
+      let amount = Cycles.available();
+      ignore Cycles.accept(amount);
+    };
+
     // Redeem couple code to create a cycle wallet
     public shared (args) func redeem(code: Text) : async CanisterId {
       let caller = args.caller;
@@ -92,7 +97,8 @@ shared (installation) actor class Faucet() = self {
             throw(e)
           }
         };
-        case (null, _) {
+        case (null, ?coupon) {
+          ignore Queue.pushFront(coupon, all_coupons);
           throw(Error.reject("Wasm binary is not provided yet"))
         };
         case (_, null) {
