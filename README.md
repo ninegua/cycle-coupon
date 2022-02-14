@@ -1,17 +1,20 @@
 # Claim a new cycles wallet with coupon code
 
-New developers coming to the [Internet Computer] do not have an easy way to start deploying canisters to the public block chain.
+
+New developers coming to the [Internet Computer] do not have an easy way to start deploying canisters to the public block chain, because they either need someone else to help create a cycles wallet for them, or they need some ICP tokens (purchased through cryptocurrency exchanges, which is a daunting process for beginners too).
 
 This project allows a controller to create coupon codes to give to developers, who can later redeem a coupon code to get their own [cycle wallet].
 
+Coupon Cycle Canister: [fg7gi-vyaaa-aaaal-qadca-cai](https://ic.rocks/principal/fg7gi-vyaaa-aaaal-qadca-cai)
+
 ## Steps
 
-**1. Download and install [DFINITY SDK]**
+**1. Download and install [DFINITY SDK].**
 
 Please follow the steps in the link.
 A successful installation should give you a command line tool called `dfx`.
 
-**2. Create an identity**
+**2. Know your identity.**
 
 The installation of `dfx` will create a new identity called "default".
 Most if not all development activities will require using your own identity for authentication purpose.
@@ -47,7 +50,7 @@ The replica returned an HTTP Error: Http Error: status 404 Not Found, content ty
 But don't worry, all it means is that you don't have a cycle wallet on the main net.
 In the next step you will create a cycle wallet by redeeming a coupon code.
 
-**3. Claim the cycle wallet canister**
+**3. Claim the cycle wallet canister.**
 
 Needless to say, you will need a coupon code before proceed.
 Suppose you are already given one, then the following command will create a new cycle wallet for you.
@@ -106,6 +109,17 @@ dfx wallet --network balance
 
 It should print the remaining cycles in your wallet.
 Congratulations! You have just finished setting up your first cycle wallet.
+
+## Reminders
+
+1. One coupon code can be redeemed only once.
+2. If you have multiple codes, it is best to redeem each of them with a newly created identity.
+   This is beause step 4 will reset existing wallet canister and you may lose access to existing balance if you had any.
+3. You may deploy canisters with a custom amount of cycles `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
+4. Please make sure you claim unused cycles with `dfx canister --network=ic stop ...` followed by `dfx canister --network=ic delete ...`.
+5. All cycles wallet created this way are on [subnet q66qm](https://dashboard.internetcomputer.org/subnet/e66qm-3cydn-nkf4i-ml4rb-4ro6o-srm5s-x5hwq-hnprz-3meqp-s7vks-5qe).
+   It means all your deployed canisters will be on this subnet too.
+   The only way to create a canister on a "random" subnet is to use ICPs directly. You can do so with `dfx ledger create-canister` or use https://nns.ic0.app.
 
 ## How can I get a coupon code?
 
