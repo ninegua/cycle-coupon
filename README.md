@@ -3,7 +3,7 @@
 
 New developers coming to the [Internet Computer] do not have an easy way to start deploying canisters to the public block chain, because they either need someone else to help create a cycles wallet for them, or they need some ICP tokens (purchased through cryptocurrency exchanges, which is a daunting process for beginners too).
 
-This project allows a controller to create coupon codes to give to developers, who can later redeem a coupon code to get their own [cycle wallet].
+This project allows a controller to create coupon codes to give to developers, who can later redeem a coupon code to get their own [cycles wallet].
 
 Coupon Cycle Canister: [fg7gi-vyaaa-aaaal-qadca-cai](https://ic.rocks/principal/fg7gi-vyaaa-aaaal-qadca-cai)
 
@@ -11,7 +11,7 @@ Coupon Cycle Canister: [fg7gi-vyaaa-aaaal-qadca-cai](https://ic.rocks/principal/
 
 **1. Download and install [DFINITY SDK].**
 
-Please follow the steps in the link.
+Please follow instructions in the above link.
 A successful installation should give you a command line tool called `dfx`.
 
 **2. Know your identity.**
@@ -47,26 +47,26 @@ The replica returned an HTTP Error: Http Error: status 404 Not Found, content ty
 </html>
 ```
 
-But don't worry, all it means is that you don't have a cycle wallet on the main net.
-In the next step you will create a cycle wallet by redeeming a coupon code.
+But don't worry, all it means is that you don't have a cycles wallet on the main net.
+In the next step you will create a cycles wallet by redeeming a coupon code.
 
-**3. Claim the cycle wallet canister.**
+**3. Claim the cycles wallet canister.**
 
-Needless to say, you will need a coupon code before proceed.
-Suppose you are already given one, then the following command will create a new cycle wallet for you.
+Needless to say, you will need a coupon code before you proceed.
+Suppose you are already given one, then the following command will create a new cycles wallet:
 
 ```
 CODE=xxxxx-yyyyy-zzzzz
 dfx canister --network=ic --no-wallet call fg7gi-vyaaa-aaaal-qadca-cai redeem "(\"$CODE\")"
 ```
 
-If everything goes well, the above command will output something like:
+It should take less than 10 seconds, and if everything goes well, the output is something like this:
 
 ```
 (principal "qsgjb-riaaa-aaaaa-aaaga-cai")
 ```
 
-This means a new cycle wallet with canister id `qsgjb-riaaa-aaaaa-aaaga-cai` has been created for you.
+This means a new cycles wallet with canister id `qsgjb-riaaa-aaaaa-aaaga-cai` has been created for you.
 
 You can check its canister status using:
 
@@ -74,7 +74,7 @@ You can check its canister status using:
 dfx canister --network=ic --no-wallet status qsgjb-riaaa-aaaaa-aaaga-cai
 ```
 
-It should output something like:
+It should output something like this:
 
 ```
 Canister status call result for qsgjb-riaaa-aaaaa-aaaga-cai.
@@ -88,12 +88,12 @@ Balance: 1_000_000_000_000 Cycles
 Module hash: 0x53ec1b030f1891bf8fd3877773b15e66ca040da539412cc763ff4ebcaf4507c5
 ```
 
-You might get different values for `Controllers`, `Balance` and `Module hash`.
-But the controller should be your principal id.
+You will get different values for `Controllers`, `Balance` and `Module hash`.
+But the controller should be your principal id from **Step 2**.
 
-**4. Setup your cycle wallet**
+**4. Setup your cycles wallet**
 
-Finally, you can set up your cycle wallet by:
+Finally, you can set up your cycles wallet by:
 
 ```
 dfx identity --network=ic set-wallet CANISTER_ID
@@ -101,31 +101,32 @@ dfx identity --network=ic set-wallet CANISTER_ID
 
 Replace that `CANISTER_ID` argument with the output from step 3.
 
-You can also verify if your cycle wallet is working:
+You can also verify if your cycles wallet is working:
 
 ```
 dfx wallet --network balance
 ```
 
 It should print the remaining cycles in your wallet.
-Congratulations! You have just finished setting up your first cycle wallet.
+Congratulations! You have just finished setting up your first cycles wallet.
 
 ## Reminders
 
 1. One coupon code can be redeemed only once.
 2. If you have multiple codes, it is best to redeem each of them with a newly created identity.
-   This is beause step 4 will reset existing wallet canister and you may lose access to existing balance if you had any.
-3. You may deploy canisters with a custom amount of cycles `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
-4. Please make sure you claim unused cycles with `dfx canister --network=ic stop ...` followed by `dfx canister --network=ic delete ...`.
+   This is because step 4 will detach your identity from the current wallet canister if you had one, and you will lose access if you don't haven't written down its canister id.
+3. You may deploy canisters with a custom amount of cycles by `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
+4. Please make sure you claim unused cycles when you no longer need the canisters you have deployed through the cycles wallet.
+   `dfx canister --network=ic stop CANISTER_ID && dfx canister --network=ic delete CANISTER_ID` will do the trick.
 5. All cycles wallet created this way are on [subnet q66qm](https://dashboard.internetcomputer.org/subnet/e66qm-3cydn-nkf4i-ml4rb-4ro6o-srm5s-x5hwq-hnprz-3meqp-s7vks-5qe).
    It means all your deployed canisters will be on this subnet too.
-   The only way to create a canister on a "random" subnet is to use ICPs directly. You can do so with `dfx ledger create-canister` or use https://nns.ic0.app.
+   There is a way to create a canister on a *random* subnet, by using `dfx ledger create-canister` or the NNS app at https://nns.ic0.app.
 
 ## How can I get a coupon code?
 
-Coupon codes are usually given to students who signed for Internet Computer related development courses.
+Coupon codes are usually given through private channels to students who have signed up for Internet Computer related development courses.
 I personally will only give out code if you have signed up my classes.
 
 [Internet Computer]: https://internetcomputer.org
 [DFINITY SDK]: https://smartcontracts.org
-[cycle wallet]: https://smartcontracts.org/docs/developers-guide/default-wallet.html
+[cycles wallet]: https://smartcontracts.org/docs/developers-guide/default-wallet.html
