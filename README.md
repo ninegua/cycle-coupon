@@ -31,7 +31,7 @@ Note that this identity is the same regardless of whether you are doing local or
 You can also get the wallet canister id (on main net) that is associated with your identity by:
 
 ```
-dfx identity get-wallet --network=ic
+dfx identity --network=ic get-wallet
 ```
 
 If this is the first time you use `dfx`, depending on its version, you may be greeted with a very cryptic (or even misleading) error like below:
