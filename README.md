@@ -116,7 +116,7 @@ Congratulations! You have just finished setting up your first cycles wallet.
 - If you have multiple codes, it is best to redeem each of them with a newly created identity.
   This is because step 4 will detach your identity from the current wallet canister if you had one, and you will lose access if you don't haven't written down its canister id.
 - You may deploy canisters with a custom amount of cycles by `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
-- Please make sure you claim unused cycles when you no longer need the canisters you have deployed through the cycles wallet.
+- Please make sure you reclaim unused cycles when you no longer need the canisters you have deployed through the cycles wallet.
   `dfx canister --network=ic stop CANISTER_ID && dfx canister --network=ic delete CANISTER_ID` will do the trick.
 - All cycles wallet created this way are on [subnet q66qm](https://dashboard.internetcomputer.org/subnet/e66qm-3cydn-nkf4i-ml4rb-4ro6o-srm5s-x5hwq-hnprz-3meqp-s7vks-5qe).
   It means all your deployed canisters will be on this subnet too.
