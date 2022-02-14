@@ -112,15 +112,15 @@ Congratulations! You have just finished setting up your first cycles wallet.
 
 ## Reminders
 
-1. One coupon code can be redeemed only once.
-2. If you have multiple codes, it is best to redeem each of them with a newly created identity.
-   This is because step 4 will detach your identity from the current wallet canister if you had one, and you will lose access if you don't haven't written down its canister id.
-3. You may deploy canisters with a custom amount of cycles by `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
-4. Please make sure you claim unused cycles when you no longer need the canisters you have deployed through the cycles wallet.
-   `dfx canister --network=ic stop CANISTER_ID && dfx canister --network=ic delete CANISTER_ID` will do the trick.
-5. All cycles wallet created this way are on [subnet q66qm](https://dashboard.internetcomputer.org/subnet/e66qm-3cydn-nkf4i-ml4rb-4ro6o-srm5s-x5hwq-hnprz-3meqp-s7vks-5qe).
-   It means all your deployed canisters will be on this subnet too.
-   There is a way to create a canister on a *random* subnet, by using `dfx ledger create-canister` or the NNS app at https://nns.ic0.app.
+- One coupon code can be redeemed only once.
+- If you have multiple codes, it is best to redeem each of them with a newly created identity.
+  This is because step 4 will detach your identity from the current wallet canister if you had one, and you will lose access if you don't haven't written down its canister id.
+- You may deploy canisters with a custom amount of cycles by `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
+- Please make sure you claim unused cycles when you no longer need the canisters you have deployed through the cycles wallet.
+  `dfx canister --network=ic stop CANISTER_ID && dfx canister --network=ic delete CANISTER_ID` will do the trick.
+- All cycles wallet created this way are on [subnet q66qm](https://dashboard.internetcomputer.org/subnet/e66qm-3cydn-nkf4i-ml4rb-4ro6o-srm5s-x5hwq-hnprz-3meqp-s7vks-5qe).
+  It means all your deployed canisters will be on this subnet too.
+  There is a way to create a canister on a *random* subnet, by using `dfx ledger create-canister` or the NNS app at https://nns.ic0.app.
 
 ## How can I get a coupon code?
 
