@@ -102,7 +102,14 @@ shared (installation) actor class Faucet() = self {
           throw(Error.reject("Wasm binary is not provided yet"))
         };
         case (_, null) {
-          throw(Error.reject("Code is not redeemable or already redeemed"))
+          switch (Queue.find(all_wallets, eqCoupon(code))) {
+             case (?wallet) {
+               throw(Error.reject("Code is already redeemed: " # debug_show(wallet)))
+             };
+             case null {
+               throw(Error.reject("Code is not redeemable"))
+             }
+          }
         }
       }
     };
