@@ -40,6 +40,10 @@ shared (installation) actor class Faucet() = self {
       func ({ coupon: Text }) : Bool { coupon == code }
     };
 
+    public shared query func owner() : async Principal {
+      OWNER
+    };
+
     public shared (args) func add(allocations: [(Text, ?Cycle)]) : async [Text] {
       assert(args.caller == OWNER);
       let installed = Queue.empty<Text>();
@@ -51,6 +55,21 @@ shared (installation) actor class Faucet() = self {
         }
       };
       Queue.toArray(installed)
+    };
+
+    public shared (args) func update(allocations: [(Text, ?Cycle)]) : async [Text] {
+      assert(args.caller == OWNER);
+      let updated = Queue.empty<Text>();
+      for ((code, cycle) in Iter.fromArray(allocations)) {
+        switch (Queue.removeOne(all_coupons, eqCoupon(code))) {
+          case (?(_)) {
+            ignore Queue.pushFront({ coupon = code; cycle = Option.get(cycle, DEFAULT_CYCLES) }, all_coupons);
+            ignore Queue.pushFront(code, updated);
+          };
+          case null {}
+        }
+      };
+      Queue.toArray(updated)
     };
 
     public shared (args) func install(wasm: Blob) {
