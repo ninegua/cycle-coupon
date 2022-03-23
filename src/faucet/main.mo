@@ -1,3 +1,4 @@
+import Array "mo:base/Array";
 import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
 import Debug "mo:base/Debug";
@@ -10,6 +11,7 @@ import Queue "mo:mutable-queue/Queue";
 shared (installation) actor class Faucet() = self {
 
     let OWNER = installation.caller;
+    stable var ALLOWED = [OWNER];
     let DEFAULT_CYCLES = 1_000_000_000_000;
    
     type Cycle = Nat;
@@ -44,8 +46,17 @@ shared (installation) actor class Faucet() = self {
       OWNER
     };
 
+    func allowed(id: Principal) : Bool {
+      Option.isSome(Array.find(ALLOWED, func (x: Principal) : Bool { x == id }))
+    };
+
+    public shared (args) func allow(ids: [Principal]) {
+      assert(args.caller == OWNER or allowed(args.caller));
+      ALLOWED := ids;
+    };
+
     public shared (args) func add(allocations: [(Text, ?Cycle)]) : async [Text] {
-      assert(args.caller == OWNER);
+      assert(allowed(args.caller));
       let installed = Queue.empty<Text>();
       for ((code, cycle) in Iter.fromArray(allocations)) {
         if (Option.isNull(Queue.find(all_coupons, eqCoupon(code))) and
@@ -58,7 +69,7 @@ shared (installation) actor class Faucet() = self {
     };
 
     public shared (args) func update(allocations: [(Text, ?Cycle)]) : async [Text] {
-      assert(args.caller == OWNER);
+      assert(allowed(args.caller));
       let updated = Queue.empty<Text>();
       for ((code, cycle) in Iter.fromArray(allocations)) {
         switch (Queue.removeOne(all_coupons, eqCoupon(code))) {
@@ -73,17 +84,17 @@ shared (installation) actor class Faucet() = self {
     };
 
     public shared (args) func install(wasm: Blob) {
-      assert(args.caller == OWNER);
+      assert(allowed(args.caller));
       wasm_binary := ?wasm;
     };
 
     public shared query (args) func coupons() : async [Allocation] {
-      assert(args.caller == OWNER);
+      assert(allowed(args.caller));
       Queue.toArray(all_coupons)
     };
 
     public shared query (args) func wallets() : async [Installed] {
-      assert(args.caller == OWNER);
+      assert(allowed(args.caller));
       Queue.toArray(all_wallets)
     };
 
