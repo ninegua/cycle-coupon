@@ -42,8 +42,8 @@ shared (installation) actor class Faucet() = self {
       func ({ coupon: Text }) : Bool { coupon == code }
     };
 
-    public shared query func owner() : async Principal {
-      OWNER
+    public shared query func owner() : async { owner: Principal; allowed : [Principal] } {
+      { owner = OWNER; allowed = ALLOWED }
     };
 
     func allowed(id: Principal) : Bool {
