@@ -57,7 +57,7 @@ Suppose you are already given one, then the following command will create a new 
 
 ```
 CODE=xxxxx-yyyyy-zzzzz
-dfx canister --network=ic --no-wallet call fg7gi-vyaaa-aaaal-qadca-cai redeem "(\"$CODE\")"
+dfx canister --network=ic call fg7gi-vyaaa-aaaal-qadca-cai redeem "(\"$CODE\")"
 ```
 
 It should take less than 10 seconds, and if everything goes well, the output is something like this:
@@ -71,7 +71,7 @@ This means a new cycles wallet with canister id `qsgjb-riaaa-aaaaa-aaaga-cai` ha
 You can check its canister status using:
 
 ```
-dfx canister --network=ic --no-wallet status qsgjb-riaaa-aaaaa-aaaga-cai
+dfx canister --network=ic status qsgjb-riaaa-aaaaa-aaaga-cai
 ```
 
 It should output something like this:
@@ -118,15 +118,19 @@ Congratulations! You have just finished setting up your first cycles wallet.
 - You may deploy canisters with a custom amount of cycles by `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
 - Please make sure you reclaim unused cycles when you no longer need the canisters you have deployed through the cycles wallet.
   `dfx canister --network=ic stop CANISTER_ID && dfx canister --network=ic delete CANISTER_ID` will do the trick.
-- All cycles wallet created this way are on [subnet q66qm](https://dashboard.internetcomputer.org/subnet/e66qm-3cydn-nkf4i-ml4rb-4ro6o-srm5s-x5hwq-hnprz-3meqp-s7vks-5qe).
-  It means all your deployed canisters will be on this subnet too.
-  There is a way to create a canister on a *random* subnet, by using `dfx ledger create-canister` or the NNS app at https://nns.ic0.app.
 
 ## How can I get a coupon code?
 
-Coupon codes are usually given through private channels to students who have signed up for Internet Computer related development courses.
+Coupon codes are distributed via the [Cycle Faucet] or given through private channels to students who have signed up for Internet Computer related development courses.
 I personally will only give out code if you have signed up my classes.
+
+## For administrators
+
+If you are an authorized administrator, you may add new coupons to the faucet by running the [add-coupons.sh](./add-coupons.sh) script.
+Please also make sure you have some ICP balance (use `dfx ledger --network=ic balance` to check) because each coupon will require creating a new canister id through the ICP Ledger.
+
 
 [Internet Computer]: https://internetcomputer.org
 [DFINITY SDK]: https://smartcontracts.org
 [cycles wallet]: https://smartcontracts.org/docs/developers-guide/default-wallet.html
+[Cycle Faucet]: https://faucet.dfinity.org
