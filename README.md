@@ -114,21 +114,22 @@ Congratulations! You have just finished setting up your first cycles wallet.
 
 - One coupon code can be redeemed only once.
 - If you have multiple codes, it is best to redeem each of them with a newly created identity.
-  This is because step 4 will detach your identity from the current wallet canister if you had one, and you will lose access if you don't haven't written down its canister id.
-- You may deploy canisters with a custom amount of cycles by `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is already enough for most purposes.
+  This is because step 4 will detach your identity from the current wallet canister if you had one, and you will lose access if you haven't written down its canister id.
+- When you use cycles wallet to deploy your project, you should specify the amount of cycles by `dfx deploy --network=ic --with-cycles=...`. Usually 1 trillion cycles is enough for most purposes.
 - Please make sure you reclaim unused cycles when you no longer need the canisters you have deployed through the cycles wallet.
   `dfx canister --network=ic stop CANISTER_ID && dfx canister --network=ic delete CANISTER_ID` will do the trick.
 
 ## How can I get a coupon code?
 
-Coupon codes are distributed via the [Cycle Faucet] or given through private channels to students who have signed up for Internet Computer related development courses.
+You might get a free coupon code by going through [Cycle Faucet].
+Or you may get one through private channels if you have signed up for Internet Computer related development courses.
 I personally will only give out code if you have signed up my classes.
 
 ## For administrators
 
 If you are an authorized administrator, you may add new coupons to the faucet by running the [add-coupons.sh](./add-coupons.sh) script.
-Please also make sure you have some ICP balance (use `dfx ledger --network=ic balance` to check) because each coupon will require creating a new canister id through the ICP Ledger.
-
+Please also make sure you have some ICP balance (use `dfx ledger --network=ic balance` to check) before creating new coupons.
+This because each coupon will require creating a new canister id through the ICP Ledger.
 
 [Internet Computer]: https://internetcomputer.org
 [DFINITY SDK]: https://smartcontracts.org
