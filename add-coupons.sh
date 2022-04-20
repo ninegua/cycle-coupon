@@ -11,6 +11,7 @@ OUTPUT=coupons.txt
 
 echo -e "==========\nStep 0: Checking if we are authorized\n=========="
 dfx canister --network=ic call --query $FAUCET stats 2>&1 > /dev/null || (echo "You are not authorized by the faucet to add coupons. Abort!" && exit 1)
+test $? = 0 || exit 1
 
 echo -e "\n==========\nStep 1: Getting ICP to Cycle conversion rate\n=========="
 
