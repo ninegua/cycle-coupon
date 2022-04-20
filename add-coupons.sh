@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 USAGE="USAGE: $0 <number of coupons> <trillion cycle per coupon>"
 n=$1
 cycle=$2
@@ -29,11 +31,11 @@ test "$answer" != y && test "$answer" != Y && echo Abort! && exit 1
 
 for i in $(seq 1 $n); do
   while true; do
-    coupon=$(uuidgen -r|sed -s 's/-//g'|tr '[:lower:]' '[:upper:]' |sed -e 's/...../&-/g'|cut -c1-17)
+    coupon=$(uuidgen|sed -e 's/-//g'|tr '[:lower:]' '[:upper:]' |sed -e 's/...../&-/g'|cut -c1-17)
     echo $coupon | grep -q '[1I0OZ2]' || break
   done
 
-  echo -e "\n==========\nStep 2: Creating canister id for coupon $i\n=========="
+  echo -e "\n==========\nStep 2: Creating canister id for coupon '$coupon'\n=========="
   tmpfile=$(mktemp)
   dfx ledger --network=ic create-canister --e8s "$e8s" "$(dfx identity get-principal)" | tee $tmpfile
   test $? = 0 || exit 1
@@ -57,7 +59,7 @@ for i in $(seq 1 $n); do
   tmpfile=$(mktemp)
   dfx canister --network=ic call --update $FAUCET add "(vec { record { \"$coupon\"; $cycle : nat } })" | tee $tmpfile
   test $? = 0 || exit 1
-  date --utc >> $OUTPUT
+  date -u >> $OUTPUT
   cat $tmpfile >> $OUTPUT
   rm $tmpfile
 done
