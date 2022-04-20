@@ -77,7 +77,6 @@ shared (installation) actor class Faucet() = self {
       var coupons_allocated = 0;
       var cycles_allocated = 0;
       var coupons_expired = 0;
-      var wallets_created = 0;
       var cycles_spent = 0;
       for (allocation in Queue.toIter(all_coupons)) {
         if (allocation.expiry < now) {
@@ -91,6 +90,7 @@ shared (installation) actor class Faucet() = self {
           cycles_spent := cycles_spent + installed.cycle;
       };
 
+      let wallets_created = Queue.size(all_wallets);
       let reserved = Queue.size(canisters_reserve);
       debug_show({
         wallets = { reserved = reserved; created = wallets_created; cycles_spent = cycles_spent; };
