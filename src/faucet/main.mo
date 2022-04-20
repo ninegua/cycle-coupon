@@ -32,6 +32,7 @@ shared (installation) actor class Faucet() = self {
     type Wallet = actor {
       add_controller : (Principal) -> async ();
       remove_controller : (Principal) -> async ();
+      wallet_receive : () -> async ();
     };
 
     type Allocation = { coupon : Text; cycle : Cycle; expiry: Time };
@@ -70,14 +71,7 @@ shared (installation) actor class Faucet() = self {
       ALLOWED := ids;
     };
 
-    type Stats = {
-      wallets : { created: Nat; cycles_spent : Nat; };
-      coupons : { expired: Nat; allocated : Nat; };
-      cycles  : { allocated: Cycle; balance: Cycle };
-      pruned : Pruned;
-    };
-
-    public shared query (args) func stats() : async Stats {
+    public shared query (args) func stats() : async Text {
       assert(allowed(args.caller));
       let now = Time.now();
       var coupons_allocated = 0;
@@ -97,11 +91,13 @@ shared (installation) actor class Faucet() = self {
           cycles_spent := cycles_spent + installed.cycle;
       };
 
-      { wallets = { created = wallets_created; cycles_spent = cycles_spent; };
+      let reserved = Queue.size(canisters_reserve);
+      debug_show({
+        wallets = { reserved = reserved; created = wallets_created; cycles_spent = cycles_spent; };
         coupons = { expired = coupons_expired; allocated = coupons_allocated; };
         cycles = { allocated = cycles_allocated; balance = Cycles.balance(); };
         pruned = all_pruned;
-      }
+      })
     };
 
     // TODO: Queue needs a more efficient filter function.
@@ -147,16 +143,16 @@ shared (installation) actor class Faucet() = self {
       Queue.toArray(success)
     };
 
-    public shared (args) func add(allocations: [(Text, Cycle)]) : async [Text] {
+    public shared (args) func add(allocations: [(Text, Cycle)]) : async [(Text, Nat)] {
       assert(allowed(args.caller));
       prune();
-      let installed = Queue.empty<Text>();
+      let installed = Queue.empty<(Text, Nat)>();
       for ((code, cycle) in Iter.fromArray(allocations)) {
         if (Option.isNull(Queue.find(all_coupons, eqCoupon(code))) and
             Option.isNull(Queue.find(all_wallets, eqCoupon(code)))) {
           let expiry = Time.now() + DEFAULT_EXPIRY;
           ignore Queue.pushFront({ coupon = code; cycle = cycle; expiry = expiry }, all_coupons);
-          ignore Queue.pushFront(code, installed);
+          ignore Queue.pushFront((code, cycle), installed);
         }
       };
       Queue.toArray(installed)
@@ -210,13 +206,21 @@ shared (installation) actor class Faucet() = self {
           try {
             let IC0 : Management = actor("aaaaa-aa");
             let this = Principal.fromActor(self);
-            Cycles.add(coupon.cycle);
+            var cycle_to_add = coupon.cycle;
             let canister_id = switch (Queue.popFront(canisters_reserve)) {
               case (?canister_id) { canister_id };
-              case null { (await IC0.create_canister({ settings = ? { controllers = ?[this]; } })).canister_id; };
+              case null {
+                Cycles.add(cycle_to_add);
+                cycle_to_add := 0;
+                (await IC0.create_canister({ settings = ? { controllers = ?[this]; } })).canister_id;
+              };
             };
             await IC0.install_code({ mode = #install; canister_id = canister_id; wasm_module = binary; arg = Blob.fromArray([]) });
             let wallet : Wallet = actor(Principal.toText(canister_id));
+            if (cycle_to_add > 0) {
+              Cycles.add(cycle_to_add);
+              await wallet.wallet_receive();
+            };
             await wallet.add_controller(caller);
             await IC0.update_settings({ canister_id = canister_id; settings = { controllers = ?[caller] } });
             await wallet.remove_controller(this);
