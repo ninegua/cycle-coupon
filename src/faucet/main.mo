@@ -7,7 +7,9 @@ import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 import Principal "mo:base/Principal";
 import Queue "mo:mutable-queue/Queue";
+import Text "mo:base/Text";
 import Time "mo:base/Time";
+import SHA256 "mo:sha256/SHA256";
 
 shared (installation) actor class Faucet() = self {
 
@@ -35,8 +37,8 @@ shared (installation) actor class Faucet() = self {
       wallet_receive : () -> async ();
     };
 
-    type Allocation = { coupon : Text; cycle : Cycle; expiry: Time };
-    type Installed = { coupon : Text; controller : Principal; canister : CanisterId; cycle: Cycle; creation: Time };
+    type Allocation = { hash: ?Blob; coupon : ?Text; cycle : Cycle; expiry: Time };
+    type Installed = { hash: ?Blob; coupon : ?Text; controller : Principal; canister : CanisterId; cycle: Cycle; creation: Time };
     type Pruned = { coupons_expired : Nat; wallets_pruned : Nat; cycles_spent : Nat };
 
     // All coupons. Expired coupons are pruned from this queue when new coupons are added.
@@ -54,8 +56,23 @@ shared (installation) actor class Faucet() = self {
     // Binary of the wallet wasm module.
     stable var wasm_binary : ?Blob = null;
 
-    func eqCoupon(code: Text) : { coupon : Text } -> Bool {
-      func ({ coupon: Text }) : Bool { coupon == code }
+    func sha256(code: Text) : Blob {
+      Blob.fromArray(SHA256.sha256(Blob.toArray(Text.encodeUtf8(code))))
+    };
+
+    func eqCoupon(code: Text) : { coupon: ?Text; hash: ?Blob } -> Bool {
+      let image = sha256(code);
+      func ({ coupon: ?Text; hash: ?Blob }) : Bool { coupon == ?code or hash == ?image }
+    };
+
+    system func postupgrade() {
+      all_coupons := Queue.map(all_coupons, func(alloc: Allocation) : Allocation {
+        switch (alloc.coupon, alloc.hash) {
+          case (?code, null) { { hash = ?sha256(code); coupon = null; cycle = alloc.cycle; expiry = alloc.expiry } };
+          case (?_, ?hash) { { hash = ?hash; coupon = null; cycle = alloc.cycle; expiry = alloc.expiry } };
+          case (_, _) { alloc };
+        }
+      });
     };
 
     public shared query func owner() : async { owner: Principal; allowed : [Principal] } {
@@ -151,7 +168,7 @@ shared (installation) actor class Faucet() = self {
         if (Option.isNull(Queue.find(all_coupons, eqCoupon(code))) and
             Option.isNull(Queue.find(all_wallets, eqCoupon(code)))) {
           let expiry = Time.now() + DEFAULT_EXPIRY;
-          ignore Queue.pushFront({ coupon = code; cycle = cycle; expiry = expiry }, all_coupons);
+          ignore Queue.pushFront({ hash = ?sha256(code); coupon = null; cycle = cycle; expiry = expiry }, all_coupons);
           ignore Queue.pushFront((code, cycle), installed);
         }
       };
@@ -165,7 +182,7 @@ shared (installation) actor class Faucet() = self {
       for ((code, cycle, expiry) in Iter.fromArray(allocations)) {
         switch (Queue.removeOne(all_coupons, eqCoupon(code))) {
           case (?(_)) {
-            ignore Queue.pushFront({ coupon = code; cycle = cycle; expiry = now + expiry }, all_coupons);
+            ignore Queue.pushFront({ hash = ?sha256(code); coupon = null; cycle = cycle; expiry = now + expiry }, all_coupons);
             ignore Queue.pushFront(code, updated);
           };
           case null {}
@@ -224,7 +241,7 @@ shared (installation) actor class Faucet() = self {
             await wallet.add_controller(caller);
             await IC0.update_settings({ canister_id = canister_id; settings = { controllers = ?[caller] } });
             await wallet.remove_controller(this);
-            ignore Queue.pushFront({ coupon = coupon.coupon; controller = caller; canister = canister_id; cycle = coupon.cycle; creation = now }, all_wallets);
+            ignore Queue.pushFront({ hash = null; coupon = ?code; controller = caller; canister = canister_id; cycle = coupon.cycle; creation = now }, all_wallets);
             canister_id
           } catch(e) {
             // Put the coupon code back if there is any error
