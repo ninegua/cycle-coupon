@@ -65,16 +65,6 @@ shared (installation) actor class Faucet() = self {
       func ({ coupon: ?Text; hash: ?Blob }) : Bool { coupon == ?code or hash == ?image }
     };
 
-    system func postupgrade() {
-      all_coupons := Queue.map(all_coupons, func(alloc: Allocation) : Allocation {
-        switch (alloc.coupon, alloc.hash) {
-          case (?code, null) { { hash = ?sha256(code); coupon = null; cycle = alloc.cycle; expiry = alloc.expiry } };
-          case (?_, ?hash) { { hash = ?hash; coupon = null; cycle = alloc.cycle; expiry = alloc.expiry } };
-          case (_, _) { alloc };
-        }
-      });
-    };
-
     public shared query func owner() : async { owner: Principal; allowed : [Principal] } {
       { owner = OWNER; allowed = ALLOWED }
     };
