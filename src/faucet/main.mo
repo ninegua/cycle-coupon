@@ -3,15 +3,24 @@ import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
 import Debug "mo:base/Debug";
 import Error "mo:base/Error";
+import Int "mo:base/Int";
 import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
+import Nat64 "mo:base/Nat64";
 import Option "mo:base/Option";
+import Prim "mo:prim";
 import Principal "mo:base/Principal";
 import Queue "mo:mutable-queue/Queue";
+import StableMemory "mo:base/ExperimentalStableMemory";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 import SHA256 "mo:sha256/SHA256";
 
 shared (installation) actor class Faucet() = self {
+
+    // The secret API key shared between Prometheus and this canister
+    // to authorize access to the metrics endpoint
+    let METRICS_API_KEY = "MySecretKey";
 
     let OWNER = installation.caller;
     stable var ALLOWED = [OWNER];
@@ -40,6 +49,33 @@ shared (installation) actor class Faucet() = self {
     type Allocation = { hash: ?Blob; coupon : ?Text; cycle : Cycle; expiry: Time };
     type Installed = { hash: ?Blob; coupon : ?Text; controller : Principal; canister : CanisterId; cycle: Cycle; creation: Time };
     type Pruned = { coupons_expired : Nat; wallets_pruned : Nat; cycles_spent : Nat };
+
+    type WalletStats = { reserved: Nat; created: Nat; cycles_spent: Nat };
+    type CouponStats = { expired: Nat; allocated: Nat };
+    type CycleStats = { allocated: Nat; balance: Nat };
+
+    type Stats =  { wallets: WalletStats; coupons: CouponStats; cycles: CycleStats; pruned: Pruned; };
+
+    type HeaderField = (Text, Text);
+
+    type HttpResponse = {
+      status_code: Nat16;
+      headers: [HeaderField];
+      body: Blob;
+    };
+  
+    type HttpRequest = {
+      method: Text;
+      url: Text;
+      headers: [HeaderField];
+      body: Blob;
+    };
+
+    let permission_denied: HttpResponse = {
+      status_code = 403;
+      headers = [];
+      body = "";
+    };
 
     // All coupons. Expired coupons are pruned from this queue when new coupons are added.
     stable var all_coupons = Queue.empty<Allocation>();
@@ -78,8 +114,8 @@ shared (installation) actor class Faucet() = self {
       ALLOWED := ids;
     };
 
-    public shared query (args) func stats() : async Text {
-      assert(allowed(args.caller));
+    func _stats() : Stats {
+
       let now = Time.now();
       var coupons_allocated = 0;
       var cycles_allocated = 0;
@@ -99,13 +135,116 @@ shared (installation) actor class Faucet() = self {
 
       let wallets_created = Queue.size(all_wallets);
       let reserved = Queue.size(canisters_reserve);
-      debug_show({
-        wallets = { reserved = reserved; created = wallets_created; cycles_spent = cycles_spent; };
-        coupons = { expired = coupons_expired; allocated = coupons_allocated; };
-        cycles = { allocated = cycles_allocated; balance = Cycles.balance(); };
-        pruned = all_pruned;
-      })
+
+
+      let wallet_stats = {
+        reserved = reserved; 
+        created = wallets_created; 
+        cycles_spent = cycles_spent;
+      };
+
+      let coupon_stats = {
+        expired = coupons_expired; 
+        allocated = coupons_allocated;
+      };
+
+      let cycle_stats = {
+        allocated = cycles_allocated;
+        balance = Cycles.balance();
+      };
+
+      { wallets = wallet_stats; coupons = coupon_stats; cycles = cycle_stats; pruned = all_pruned };
+
     };
+
+    public shared query (args) func stats() : async Text {
+      assert(allowed(args.caller));
+      debug_show(_stats());
+    };
+
+      public query func http_request(req : HttpRequest) : async HttpResponse {
+      // Strip query params and get only path
+      let ?path = Text.split(req.url, #char '?').next();
+      Debug.print(req.url);
+      Debug.print(path);
+      switch (req.method, path) {
+        // Endpoint that serves metrics to be consumed with Prometheseus
+        case ("GET", "/metrics") {
+          Debug.print("GET: /metrics");
+          
+          // Handle authz
+         
+          let key = get_api_key(req.headers);
+          switch(key) {
+            case(null) return permission_denied;
+            case(?v) let key = v;
+          };
+          if (key != "Bearer " # METRICS_API_KEY) {
+            return permission_denied;
+          };
+
+          // We'll arrive here only if authz was successful
+          let m = metrics();
+          Debug.print(m);
+          {
+            status_code =  200;
+            headers = [ ("content-type", "text/plain") ];
+            body =  Text.encodeUtf8(m);
+          }
+        };
+        case _ {
+          Debug.print("Invalid request");
+          {
+            status_code = 400;
+            headers = [];
+            body = "Invalid request";
+          }
+        };
+      } 
+    };
+
+    // Returns the api key from the authz header
+    func get_api_key(headers: [HeaderField]) : ?Text {
+      let key = "";
+      let authz_header : ?HeaderField = Array.find(headers, func((header, val): (Text, Text)) : Bool { header == "authorization" });
+        switch authz_header {
+          case(null) null;
+          case(?header) {
+            ?header.1;
+          };
+        };
+    };
+
+    // Returns a set of metrics encoded in Prometheus text-based exposition format
+    // https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
+    // More info on the specific metrics can be found in the following forum threads:
+    // https://forum.dfinity.org/t/motoko-get-canisters-sizes-limits/2092
+    // https://forum.dfinity.org/t/motoko-array-memory/5324/4
+    func metrics() : Text {
+
+      // Prometheus expects timestamps in ms. Time.now() returns ns.
+      let timestamp = Int.toText(Time.now()/1000000);
+      let stats = _stats();
+
+      "# HELP coupons_allocated The number of allocated coupons \n" #
+      "coupons_allocated{} " # Nat.toText(stats.coupons.allocated) # " " # timestamp # "\n" #
+      "# HELP coupons_expired The number of expired coupons \n" #
+      "coupons_expired{} " # Nat.toText(stats.coupons.expired) # " " # timestamp # "\n" #
+      "# HELP wallets_created The number of wallets created \n" #
+      "wallets_created{} " # Nat.toText(stats.wallets.created) # " " # timestamp # "\n" #
+      "# HELP wallets_cycles_spent The total number of cycles spent for wallets \n" #
+      "wallets_cycles_spent{} " # Nat.toText(stats.wallets.cycles_spent) # " " # timestamp # "\n" #
+      "# HELP balance The current balance in cycles \n" #
+      "balance{} " # Nat.toText(Cycles.balance()) # " " # timestamp # "\n" #
+      "# HELP heap_size The current size of the wasm heap in pages of 64KiB \n" #
+      "heap_size{} " # Nat.toText(Prim.rts_heap_size()) # " " # timestamp # "\n" #
+      "# HELP mem_size The current size of the wasm memory in pages of 64KiB \n" #
+      "mem_size{} " # Nat.toText(Prim.rts_memory_size()) # " " # timestamp # "\n" #
+      "# HELP mem_size The current size of the stable memory in pages of 64KiB \n" #
+      "stable_mem_size{} " # Nat64.toText(StableMemory.size()) # " " # timestamp;
+
+    };
+
 
     // TODO: Queue needs a more efficient filter function.
     func prune() {
